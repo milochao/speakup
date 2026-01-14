@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Commitment Engine | WIAA</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    /* Room themes */
+    .room-1 {
+      --room-bg: #f8f9fa;
+      --room-fg: #1a1a2e;
+      --room-accent: #e63946;
+      --room-muted: #6c757d;
+      --room-border: #dee2e6;
+      background: linear-gradient(180deg, #ffffff 0%, #f1f3f5 100%);
+    }
+
+    .room-2 {
+      --room-bg: #0d0d1a;
+      --room-fg: #f0f0f5;
+      --room-accent: #8b5cf6;
+      --room-muted: #6366f1;
+      --room-border: #2a2a4a;
+      background: radial-gradient(ellipse at top, #1a1a3e 0%, #0d0d1a 50%, #050510 100%);
+    }
+
+    .room-3 {
+      --room-bg: #0a1628;
+      --room-fg: #e2e8f0;
+      --room-accent: #22d3ee;
+      --room-muted: #64748b;
+      --room-border: #1e3a5f;
+      background: #0a1628;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .room-4 {
+      --room-bg: #0f0f0f;
+      --room-fg: #fafafa;
+      --room-accent: #d4af37;
+      --room-muted: #737373;
+      --room-border: #2a2a2a;
+      background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+      font-family: 'Playfair Display', serif;
+    }
+
+    .chat-message {
+      max-width: 80%;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+
+    .chat-message.assistant {
+      background: var(--room-border);
+      color: var(--room-fg);
+    }
+
+    .chat-message.user {
+      background: var(--room-accent);
+      color: var(--room-bg);
+      margin-left: auto;
+    }
+
+    .input-field {
+      background: transparent;
+      border: 1px solid var(--room-border);
+      color: var(--room-fg);
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+    }
+
+    .btn-primary {
+      background: var(--room-accent);
+      color: var(--room-bg);
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body class="bg-[#0a0a0a] text-white">
+  <!-- Current View State -->
+  <div id="app">
+    <!-- Landing Page -->
+    <div id="landing" class="min-h-screen flex flex-col">
+      <div class="fixed inset-0 bg-gradient-to-br from-[#0a0a0a] via-[#1a1a2e] to-[#0a0a0a]"></div>
+      <div class="fixed inset-0 opacity-30">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div class="relative z-10 flex-1 flex flex-col items-center justify-center px-4">
+        <div class="text-center mb-12 animate-fade-in">
+          <p class="text-sm uppercase tracking-[0.3em] text-gray-500 mb-6">WIAA presents</p>
+          <h1 class="text-5xl md:text-7xl font-light tracking-tight mb-4">
+            The Commitment<br>
+            <span class="font-semibold">Engine</span>
+          </h1>
+          <p class="text-gray-400 text-lg max-w-xl mx-auto mt-6">
+            A high-stakes strategic workshop that forces executives to move from
+            <span class="text-white"> dreaming </span>
+            to
+            <span class="text-white"> irreversible commitment</span>.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mb-12 animate-fade-in" style="animation-delay: 0.2s">
+          <div class="p-4 border border-gray-800 rounded-lg text-center hover:border-gray-600 transition-colors cursor-pointer" onclick="showRoom(1)">
+            <span class="text-2xl font-light text-red-400">1</span>
+            <p class="text-sm font-medium mt-2">The Detox</p>
+            <p class="text-xs text-gray-500 mt-1">Prosecutor</p>
+          </div>
+          <div class="p-4 border border-gray-800 rounded-lg text-center hover:border-gray-600 transition-colors cursor-pointer" onclick="showRoom(2)">
+            <span class="text-2xl font-light text-purple-400">2</span>
+            <p class="text-sm font-medium mt-2">The Elevation</p>
+            <p class="text-xs text-gray-500 mt-1">Story Architect</p>
+          </div>
+          <div class="p-4 border border-gray-800 rounded-lg text-center hover:border-gray-600 transition-colors cursor-pointer" onclick="showRoom(3)">
+            <span class="text-2xl font-light text-cyan-400">3</span>
+            <p class="text-sm font-medium mt-2">The Leverage Map</p>
+            <p class="text-xs text-gray-500 mt-1">Operator</p>
+          </div>
+          <div class="p-4 border border-gray-800 rounded-lg text-center hover:border-gray-600 transition-colors cursor-pointer" onclick="showRoom(4)">
+            <span class="text-2xl font-light text-amber-400">4</span>
+            <p class="text-sm font-medium mt-2">The Commitment</p>
+            <p class="text-xs text-gray-500 mt-1">Board Member</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 animate-fade-in" style="animation-delay: 0.4s">
+          <button onclick="showRoom(1)" class="px-8 py-4 bg-white text-black rounded-lg font-medium text-lg hover:bg-gray-100 transition-colors">
+            Begin The Process
+          </button>
+        </div>
+
+        <p class="text-xs text-gray-600 mt-8 max-w-md text-center animate-fade-in" style="animation-delay: 0.6s">
+          Warning: This process is designed to be uncomfortable. You will be challenged to make real decisions, not just talk about them.
+        </p>
+      </div>
+
+      <footer class="relative z-10 text-center py-6 text-gray-600 text-xs">
+        <p>McKinsey meets Black Mirror</p>
+      </footer>
+    </div>
+
+    <!-- Room 1: The Detox -->
+    <div id="room1" class="hidden min-h-screen room-1" style="color: var(--room-fg)">
+      <div class="max-w-6xl mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+          <button onclick="showLanding()" class="absolute left-4 top-8 text-gray-500 hover:text-gray-800 text-sm">← Back</button>
+          <p class="text-sm uppercase tracking-widest text-gray-500 mb-2">Room 1</p>
+          <h1 class="text-4xl font-light mb-2">The Detox</h1>
+          <p class="text-red-500 text-sm">The Prosecutor</p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+          <div class="bg-white/50 backdrop-blur rounded-lg border border-gray-200 h-[600px] flex flex-col">
+            <div class="p-4 border-b border-gray-200">
+              <p class="text-sm text-gray-500">"That feels safe. What are you actually afraid to say?"</p>
+            </div>
+            <div class="flex-1 p-4 space-y-4 overflow-auto">
+              <div class="chat-message assistant">
+                <p class="text-sm leading-relaxed">Welcome to The Detox.<br><br>I'm here to break your comfortable narratives. Before we can build something new, we need to destroy some lies.<br><br>Let's start with the first truth-telling:<br><br><strong>What industry "best practice" does everyone follow—but you secretly know is complete nonsense?</strong><br><br>Not the safe answer. The real one.</p>
+              </div>
+            </div>
+            <div class="p-4 border-t border-gray-200">
+              <div class="flex gap-3">
+                <input type="text" placeholder="Type your response..." class="input-field flex-1">
+                <button class="btn-primary">Send</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <div class="p-6 rounded-lg border border-gray-200 bg-white/30 hover:bg-white/50 cursor-pointer">
+              <div class="flex items-start gap-3 mb-3">
+                <span class="text-2xl">🎭</span>
+                <div>
+                  <h3 class="font-medium">The Lie</h3>
+                  <p class="text-sm text-gray-500">What industry "best practice" is actually nonsense?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6 rounded-lg border border-gray-200 bg-white/30 hover:bg-white/50 cursor-pointer">
+              <div class="flex items-start gap-3 mb-3">
+                <span class="text-2xl">🐄</span>
+                <div>
+                  <h3 class="font-medium">The Sacred Cow</h3>
+                  <p class="text-sm text-gray-500">What internal project/team would cause a revolt if you touched it?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6 rounded-lg border border-gray-200 bg-white/30 hover:bg-white/50 cursor-pointer">
+              <div class="flex items-start gap-3 mb-3">
+                <span class="text-2xl">💀</span>
+                <div>
+                  <h3 class="font-medium">The Pre-Mortem</h3>
+                  <p class="text-sm text-gray-500">It's 2028. You failed. Why?</p>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="showRoom(2)" class="w-full py-3 bg-red-500 text-white rounded font-medium hover:bg-red-600">
+              Enter The Elevation →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room 2: The Elevation -->
+    <div id="room2" class="hidden min-h-screen room-2" style="color: var(--room-fg)">
+      <div class="max-w-6xl mx-auto px-4 py-8 relative z-10">
+        <div class="text-center mb-8">
+          <button onclick="showRoom(1)" class="absolute left-4 top-8 text-gray-400 hover:text-white text-sm">← Back to Detox</button>
+          <p class="text-sm uppercase tracking-widest text-gray-400 mb-2">Room 2</p>
+          <h1 class="text-4xl font-light mb-2">The Elevation</h1>
+          <p class="text-purple-400 text-sm">The Story Architect</p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+          <div class="bg-purple-900/20 backdrop-blur rounded-lg border border-purple-800/50 h-[600px] flex flex-col">
+            <div class="p-4 border-b border-purple-800/50">
+              <p class="text-sm text-purple-300">"Ignore the budget. What if we did the opposite?"</p>
+            </div>
+            <div class="flex-1 p-4 space-y-4 overflow-auto">
+              <div class="chat-message assistant" style="background: rgba(139, 92, 246, 0.2)">
+                <p class="text-sm leading-relaxed">Welcome to The Elevation.<br><br>You've shed the lies. Now let's dream dangerously.<br><br>Forget budgets. Forget "realistic." Forget what the board would say.<br><br><strong>Which brand—in any industry—makes you genuinely jealous?</strong><br><br>Not who you should admire. Who keeps you up at night with envy?</p>
+              </div>
+            </div>
+            <div class="p-4 border-t border-purple-800/50">
+              <div class="flex gap-3">
+                <input type="text" placeholder="Type your response..." class="input-field flex-1 bg-transparent border-purple-700">
+                <button class="btn-primary" style="background: #8b5cf6">Send</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <div class="p-6 rounded-lg border border-purple-800/50 bg-purple-900/10 hover:bg-purple-900/20 cursor-pointer">
+              <div class="flex items-start gap-3 mb-3">
+                <span class="text-2xl">✨</span>
+                <div>
+                  <h3 class="font-medium">The Envy</h3>
+                  <p class="text-sm text-purple-300">Which brand (any industry) are you jealous of?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6 rounded-lg border border-purple-800/50 bg-purple-900/10 hover:bg-purple-900/20 cursor-pointer">
+              <div class="flex items-start gap-3 mb-3">
+                <span class="text-2xl">🔮</span>
+                <div>
+                  <h3 class="font-medium">The Unfair Advantage</h3>
+                  <p class="text-sm text-purple-300">What asset do you own that competitors can't buy?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6 rounded-lg border border-purple-500/50 bg-purple-500/10 cursor-pointer">
+              <div class="flex items-start gap-3 mb-3">
+                <span class="text-2xl">🚀</span>
+                <div>
+                  <h3 class="font-medium text-purple-400">The Category Leap</h3>
+                  <p class="text-sm text-purple-300">Combine Envy + Unfair Advantage into a 2-sentence vision</p>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="showRoom(3)" class="w-full py-3 bg-purple-500 text-white rounded font-medium hover:bg-purple-600">
+              Enter The Leverage Map →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room 3: The Leverage Map -->
+    <div id="room3" class="hidden min-h-screen room-3" style="color: var(--room-fg)">
+      <div class="fixed inset-0 opacity-30" style="background-image: linear-gradient(rgba(34, 211, 238, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 211, 238, 0.03) 1px, transparent 1px); background-size: 40px 40px;"></div>
+      <div class="max-w-6xl mx-auto px-4 py-8 relative z-10">
+        <div class="text-center mb-8">
+          <button onclick="showRoom(2)" class="absolute left-4 top-8 text-gray-400 hover:text-white text-sm font-mono">← Back to Elevation</button>
+          <p class="text-sm uppercase tracking-widest text-gray-400 mb-2 font-mono">Room 3</p>
+          <h1 class="text-4xl font-light mb-2 font-mono">The Leverage Map</h1>
+          <p class="text-cyan-400 text-sm font-mono">The Operator</p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+          <div class="bg-slate-800/20 backdrop-blur rounded border border-slate-700 h-[600px] flex flex-col">
+            <div class="p-4 border-b border-slate-700">
+              <p class="text-sm text-slate-400 font-mono">"Hope is not a strategy. Show me the leverage."</p>
+            </div>
+            <div class="flex-1 p-4 space-y-4 overflow-auto">
+              <div class="chat-message assistant" style="background: rgba(30, 58, 95, 0.5)">
+                <p class="text-sm leading-relaxed font-mono">Entering The Leverage Map.<br><br>Dreams are cheap. Mechanics are expensive.<br><br>You've got a vision. Now show me the engineering.<br><br><strong>What specific customer behavior changes when this works?</strong><br><br>Not "they'll love us more." What do they actually *do* differently?</p>
+              </div>
+            </div>
+            <div class="p-4 border-t border-slate-700">
+              <div class="flex gap-3">
+                <input type="text" placeholder="Type your response..." class="input-field flex-1 bg-transparent border-slate-600 font-mono">
+                <button class="btn-primary font-mono" style="background: #22d3ee; color: #0a1628">Send</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="text-xs text-slate-500 font-mono uppercase tracking-widest mb-4">// LEVERAGE_MAP.config</div>
+
+            <div class="p-5 rounded border border-slate-700 hover:border-slate-500 cursor-pointer font-mono">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-cyan-400">▸</span>
+                <span class="text-xs uppercase tracking-wider">customer_change</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-2">What specific behavior changes?</p>
+              <p class="text-sm text-slate-500">null</p>
+            </div>
+
+            <div class="p-5 rounded border border-slate-700 hover:border-slate-500 cursor-pointer font-mono">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-cyan-400">▸</span>
+                <span class="text-xs uppercase tracking-wider">mechanism</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-2">What forces that change? (Incentive / Default / Network)</p>
+              <p class="text-sm text-slate-500">null</p>
+            </div>
+
+            <div class="p-5 rounded border border-slate-700 hover:border-slate-500 cursor-pointer font-mono">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-cyan-400">▸</span>
+                <span class="text-xs uppercase tracking-wider">moat</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-2">Why is it hard to copy? (Data / Supply / Regulatory)</p>
+              <p class="text-sm text-slate-500">null</p>
+            </div>
+
+            <div class="p-5 rounded border border-slate-700 hover:border-slate-500 cursor-pointer font-mono">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-cyan-400">▸</span>
+                <span class="text-xs uppercase tracking-wider">trade_off</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-2">What do we explicitly stop doing?</p>
+              <p class="text-sm text-slate-500">null</p>
+            </div>
+
+            <button onclick="showRoom(4)" class="w-full py-3 bg-cyan-400 text-slate-900 rounded font-medium font-mono hover:bg-cyan-300">
+              EXECUTE: Enter Commitment →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room 4: The Commitment -->
+    <div id="room4" class="hidden min-h-screen room-4" style="color: var(--room-fg)">
+      <div class="max-w-6xl mx-auto px-4 py-8 relative z-10">
+        <div class="text-center mb-8">
+          <button onclick="showRoom(3)" class="absolute left-4 top-8 text-gray-400 hover:text-white text-sm">← Back to Leverage Map</button>
+          <p class="text-sm uppercase tracking-widest text-gray-400 mb-2">Room 4</p>
+          <h1 class="text-4xl font-medium mb-2">The Commitment</h1>
+          <p class="text-amber-400 text-sm italic">The Board Member</p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+          <div class="bg-neutral-800/30 backdrop-blur rounded-lg border border-neutral-700 h-[650px] flex flex-col">
+            <div class="p-4 border-b border-neutral-700">
+              <p class="text-sm text-neutral-400 italic">"You cannot add without subtracting. What dies today?"</p>
+            </div>
+            <div class="flex-1 p-4 space-y-4 overflow-auto">
+              <div class="chat-message assistant" style="background: rgba(42, 42, 42, 0.8)">
+                <p class="text-sm leading-relaxed">The Commitment Room.<br><br>This is where dreams become decisions. Where strategy becomes sacrifice.<br><br>You've done the thinking. Now it's time for the blood price.<br><br><strong>First: Choose your One-Way Door.</strong><br><br>What type of irreversible commitment will you make?<br>- <strong>Pricing Lock</strong>: A pricing structure you commit to publicly<br>- <strong>Policy Lock</strong>: A policy or guarantee you can't easily reverse<br>- <strong>Distribution Lock</strong>: An exclusive relationship or channel commitment<br><br>Which door will you walk through?</p>
+              </div>
+            </div>
+            <div class="p-4 border-t border-neutral-700">
+              <div class="flex gap-3">
+                <input type="text" placeholder="Type your response..." class="input-field flex-1 bg-transparent border-neutral-600">
+                <button class="btn-primary" style="background: #d4af37; color: black">Send</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <div class="p-6 rounded-lg border border-neutral-700 bg-neutral-800/10">
+              <div class="flex items-center gap-3 mb-4">
+                <span class="text-amber-400 text-2xl">⚔</span>
+                <div>
+                  <h3 class="font-medium text-lg">The One-Way Door</h3>
+                  <p class="text-sm text-neutral-400">Choose your irreversible commitment</p>
+                </div>
+              </div>
+              <div class="grid gap-3">
+                <button class="p-4 rounded border border-neutral-700 text-left hover:border-amber-400 transition-all">
+                  <span class="font-medium">Pricing Lock</span>
+                  <p class="text-sm text-neutral-400 mt-1">A pricing structure you commit to publicly</p>
+                </button>
+                <button class="p-4 rounded border border-neutral-700 text-left hover:border-amber-400 transition-all">
+                  <span class="font-medium">Policy Lock</span>
+                  <p class="text-sm text-neutral-400 mt-1">A policy or guarantee you can't easily reverse</p>
+                </button>
+                <button class="p-4 rounded border border-neutral-700 text-left hover:border-amber-400 transition-all">
+                  <span class="font-medium">Distribution Lock</span>
+                  <p class="text-sm text-neutral-400 mt-1">An exclusive relationship or channel</p>
+                </button>
+              </div>
+            </div>
+
+            <div class="p-6 rounded-lg border border-neutral-700 bg-neutral-800/10">
+              <div class="flex items-center gap-3 mb-4">
+                <span class="text-amber-400 text-2xl">☠</span>
+                <div>
+                  <h3 class="font-medium text-lg">The Kill List</h3>
+                  <p class="text-sm text-neutral-400">Name 3 active projects that stop TODAY</p>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                  <span class="text-amber-400 font-mono text-sm w-6">1.</span>
+                  <input type="text" placeholder="Project to kill..." class="input-field flex-1 bg-transparent border-neutral-600">
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-amber-400 font-mono text-sm w-6">2.</span>
+                  <input type="text" placeholder="Project to kill..." class="input-field flex-1 bg-transparent border-neutral-600">
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-amber-400 font-mono text-sm w-6">3.</span>
+                  <input type="text" placeholder="Project to kill..." class="input-field flex-1 bg-transparent border-neutral-600">
+                </div>
+              </div>
+              <p class="text-xs text-neutral-500 mt-3 italic">If the kill list isn't painful, it's not a real sacrifice.</p>
+            </div>
+
+            <div class="p-6 rounded-lg border border-neutral-700 bg-neutral-800/10">
+              <div class="flex items-center gap-3 mb-4">
+                <span class="text-amber-400 text-2xl">💰</span>
+                <div>
+                  <h3 class="font-medium text-lg">The Budget Token</h3>
+                  <p class="text-sm text-neutral-400">Specific resource being moved to this initiative</p>
+                </div>
+              </div>
+              <textarea placeholder="$X from [source] → [new initiative] OR X headcount from [team] → [new team]" class="input-field w-full h-20 resize-none bg-transparent border-neutral-600"></textarea>
+            </div>
+
+            <button onclick="showMemo()" class="w-full py-4 bg-amber-400 text-black rounded-lg font-medium text-lg hover:bg-amber-300">
+              Generate The Decision Memo →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decision Memo -->
+    <div id="memo" class="hidden min-h-screen bg-stone-50 text-stone-900">
+      <div class="max-w-4xl mx-auto px-4 py-12">
+        <div class="text-center mb-12">
+          <p class="text-sm uppercase tracking-widest text-stone-500 mb-4">The Commitment Engine</p>
+          <h1 class="text-5xl font-serif font-bold mb-4">The Decision Memo</h1>
+          <p class="text-stone-500">Your irreversible strategic commitment</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-2xl border border-stone-200 overflow-hidden">
+          <div class="bg-stone-900 text-white p-8">
+            <p class="text-sm uppercase tracking-widest opacity-60 mb-4">Headline</p>
+            <h2 class="text-2xl font-serif font-medium leading-tight">Your Category Leap Vision Statement Here...</h2>
+            <p class="text-sm opacity-60 mt-4">January 14, 2026</p>
+          </div>
+
+          <div class="p-8 space-y-8">
+            <section>
+              <h3 class="text-lg font-semibold text-stone-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span class="w-8 h-0.5 bg-stone-900"></span>
+                The Threat
+              </h3>
+              <div class="grid gap-4">
+                <div class="p-4 bg-stone-50 rounded-lg">
+                  <p class="text-xs uppercase tracking-wider text-stone-500 mb-1">The Industry Lie</p>
+                  <p class="text-sm text-stone-600 italic">[Your response here]</p>
+                </div>
+                <div class="p-4 bg-stone-50 rounded-lg">
+                  <p class="text-xs uppercase tracking-wider text-stone-500 mb-1">The Sacred Cow</p>
+                  <p class="text-sm text-stone-600 italic">[Your response here]</p>
+                </div>
+                <div class="p-4 bg-stone-50 rounded-lg">
+                  <p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Pre-Mortem: 2028</p>
+                  <p class="text-sm text-stone-600 italic">[Your response here]</p>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h3 class="text-lg font-semibold text-stone-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span class="w-8 h-0.5 bg-stone-900"></span>
+                The Vision
+              </h3>
+              <div class="p-6 bg-stone-900 text-white rounded-lg">
+                <p class="text-xs uppercase tracking-wider opacity-60 mb-2">The Category Leap</p>
+                <p class="text-lg font-serif italic">"[Your 2-sentence vision statement]"</p>
+              </div>
+            </section>
+
+            <section>
+              <h3 class="text-lg font-semibold text-red-600 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span class="w-8 h-0.5 bg-red-600"></span>
+                The Blood Price
+              </h3>
+              <div class="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+                <p class="text-xs uppercase tracking-wider text-red-600 mb-1">One-Way Door</p>
+                <p class="text-lg font-semibold text-red-800">[Selected Lock Type]</p>
+              </div>
+              <div class="p-4 bg-stone-50 rounded-lg">
+                <p class="text-xs uppercase tracking-wider text-stone-500 mb-3">The Kill List</p>
+                <ol class="space-y-2">
+                  <li class="flex items-start gap-3 text-sm"><span class="text-red-600 font-bold">1.</span><span class="line-through opacity-70">[Project 1]</span></li>
+                  <li class="flex items-start gap-3 text-sm"><span class="text-red-600 font-bold">2.</span><span class="line-through opacity-70">[Project 2]</span></li>
+                  <li class="flex items-start gap-3 text-sm"><span class="text-red-600 font-bold">3.</span><span class="line-through opacity-70">[Project 3]</span></li>
+                </ol>
+              </div>
+            </section>
+          </div>
+
+          <div class="border-t border-stone-200 p-6 text-center">
+            <p class="text-xs text-stone-500 italic">This document represents an irreversible strategic commitment.</p>
+            <p class="text-xs text-stone-500 mt-1">Generated by The Commitment Engine</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+          <button class="px-8 py-3 bg-stone-900 text-white rounded-lg font-medium hover:bg-stone-800">
+            Download Memo (.md)
+          </button>
+          <button onclick="showLanding()" class="px-8 py-3 border border-stone-300 rounded-lg font-medium hover:bg-stone-100">
+            Start New Session
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function hideAll() {
+      document.getElementById('landing').classList.add('hidden');
+      document.getElementById('room1').classList.add('hidden');
+      document.getElementById('room2').classList.add('hidden');
+      document.getElementById('room3').classList.add('hidden');
+      document.getElementById('room4').classList.add('hidden');
+      document.getElementById('memo').classList.add('hidden');
+    }
+
+    function showLanding() {
+      hideAll();
+      document.getElementById('landing').classList.remove('hidden');
+      document.body.className = 'bg-[#0a0a0a] text-white';
+    }
+
+    function showRoom(num) {
+      hideAll();
+      document.getElementById('room' + num).classList.remove('hidden');
+      document.body.className = '';
+    }
+
+    function showMemo() {
+      hideAll();
+      document.getElementById('memo').classList.remove('hidden');
+      document.body.className = '';
+    }
+  </script>
+</body>
+</html>
